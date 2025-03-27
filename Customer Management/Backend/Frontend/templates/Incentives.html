@@ -1,0 +1,354 @@
+{% extends 'Base.html' %}
+{% block pagetitle %}
+CMS | Incentive
+{% endblock %}
+{% block body %}
+<style>
+  .modal-header,
+  .modal-footer {
+    border-bottom: none !important;
+    border-top: none !important;
+  }
+
+  @media (max-width: 768px) {
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      display: none;
+    }
+
+    tbody tr {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #ddd;
+      margin-bottom: 15px;
+      padding: 10px;
+    }
+
+    tbody td {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    tbody td:last-child {
+      border-bottom: none;
+    }
+
+    tbody td::before {
+      content: attr(data-label);
+      font-weight: bold;
+      flex: 1;
+      text-align: left;
+    }
+
+    tbody td span {
+      flex: 2;
+      text-align: right;
+    }
+  }
+</style>
+<div class="container-fluid">
+  <div class="row mb-3">
+      <div class="col-lg-12">
+          <div class="card shadow rounded">
+              <div class="card-body">
+                  <div class="container-fluid">
+                      <div class="row align-items-center">
+                          <div class="col-12 col-md-6">
+                              <h4 class="text-center text-md-start">My Task</h4>
+                          </div>
+                          <div class="col-12 col-md-6 d-flex justify-content-center justify-content-md-end">
+                              <nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='%236c757d'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+                                  <ol class="breadcrumb mb-0">
+                                      <li class="breadcrumb-item">
+                                          <a href="#" class="text-decoration-none">Admin</a>
+                                      </li>
+                                      <li class="breadcrumb-item">
+                                        <a href="{% url 'Landingpage' %}" class="text-decoration-none">Dashboard</a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                      <a href="#" class="text-decoration-none">Incentive</a>
+                                  </li>
+                                  </ol>
+                              </nav>
+                          </div>
+                      </div>
+                      
+                  </div>
+                  
+                
+                    </nav>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+<div class="container-fluid">
+  <div class="row justify-content-center">
+
+    <div class="row">
+      {% for i in Staff_details %}
+      <div class="col-lg-4 col-sm-6 col-md-6 pb-4">
+         <!-- col-12 ensures full width on mobile -->
+        <div class="card shadow">
+          <div class="card-body">
+            <h5 class="card-title">
+              <i class="fa-solid fa-user-tie"></i>
+              <a href="#" data-bs-toggle="modal" data-bs-target="#Incentive_history"
+                style="text-decoration: none;font-weight:600;color:Black" onclick="GetStatus('{{i.username}}')">
+                {{ i.username }}
+              </a>
+            </h5>
+            <p class="card-text text-end fs-1 fw-bold">
+              <i class="fa-solid fa-indian-rupee-sign"></i> {{ i.Total_Product_Price }}
+            </p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+
+  </div>
+</div>
+
+<section>
+
+  <div class="modal fade" id="Incentive_history" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="staticBackdropLabel">Incentive History</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="second_body mt-3 mb-3">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-md-3 pb-3">
+                <label for="update_C_status" class="form-label fw-bold">Month</label>
+                <select class="form-select" id="month" name="month">
+                  <option class="fw-noraml" value="1">Jan</option>
+                  <option class="fw-noraml" value="2">Feb</option>
+                  <option class="fw-noraml" value="3">Mar</option>
+                  <option class="fw-noraml" value="4">Apr</option>
+                  <option class="fw-noraml" value="5">May</option>
+                  <option class="fw-noraml" value="6">Jun</option>
+                  <option class="fw-noraml" value="7">Jul</option>
+                  <option class="fw-noraml" value="8">Aug</option>
+                  <option class="fw-noraml" value="9">Sep</option>
+                  <option class="fw-noraml" value="10">Oct</option>
+                  <option class="fw-noraml" value="11">Nov</option>
+                  <option class="fw-noraml" value="12">Dec</option>
+                </select>
+                
+              </div>
+              <div class="col-md-3 pb-3">
+                <label for="update_C_status " class="form-label fw-bold">Year</label>
+                <select class="form-select" id="year" name="year">
+    
+                </select>
+
+              </div>
+              
+              <div class="col-md-3 pb-3 mt-4">
+                <label for="update_C_status" class="form-label" hidden></label>
+                <button class="btn  " style="background-color: #021182; color:white" onclick="GetStatus_month()"><i class="fa-solid fa-filter"></i> Filter</button>
+                <button class="btn  " style="background-color:red; color:white" onclick="ResetStatus()"><i class="fa-solid fa-filter"></i>Clear filter</button>
+
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        <div class="modal-body">
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script>
+
+  document.addEventListener("DOMContentLoaded", function () {
+    let yearSelect = document.getElementById("year");
+    let currentYear = new Date().getFullYear();
+
+    // Add the last 5 years as options
+    for (let i = currentYear; i >= currentYear - 5; i--) {
+      let option = document.createElement("option");
+      option.value = i;
+      option.textContent = i;
+      yearSelect.appendChild(option);
+    }
+  });
+
+
+
+// GET HISTORY
+function GetStatus(name) {
+  $.ajax({
+      url: "/Get_incentive_data/" + name,
+      type: "GET",
+      dataType: "json",
+      success: function (response) {
+          console.log(response);
+
+          let modalBody = $("#Incentive_history .modal-body");
+          modalBody.empty(); 
+
+          if (response.Details.length === 0) {
+              modalBody.append(`<p class="text-muted text-center">No incentive data available</p>`);
+          } else {
+              let tableContent = `
+              <h2 id="vada" hidden>${name}</h2>
+                  <table class="table">
+                      <thead>
+                          <tr>
+                              <th class="pb-4">Bill ID</th>
+                              <th class="pb-4">Customer ID</th>
+                              <th class="pb-4">Product Value</th>
+                              <th class="pb-4">Payment Status</th>
+                              <th class="pb-4">Created At</th>
+                          </tr>
+                      </thead>
+                      <tbody id="Table_data">`;
+
+              $.each(response.Details, function (index, item) {
+                  tableContent += `
+                      <tr data-name="${name}"> <!-- Store Name in Row -->
+                          <td hidden>${name}</td>
+                          <td class="pb-4" data-label="Bill ID">${item.bill_id}</td>
+                          <td class="pb-4" data-label="Customer ID">${item.customer_name}</td>
+                          <td class="pb-4" data-label="Product Value"><i class="fa-solid fa-indian-rupee-sign"></i> ${item.product_value}</td>
+                          <td class="pb-4" data-label="Payment Status">${item.payment_status}</td>
+                          <td class="pb-4" data-label="Created At">${item.created_at}</td>
+                      </tr>`;
+              });
+
+              tableContent += `</tbody></table>`;
+              modalBody.append(tableContent);
+          }
+      },
+      error: function (xhr, status, error) {
+          console.log("Error:", xhr.responseText);
+          alert("Failed to load incentive history!");
+      }
+  });
+}
+
+
+
+//Reset
+
+function ResetStatus() {
+  let name = $("#vada").text() 
+  $.ajax({
+      url: "/Get_incentive_data/" + name,
+      type: "GET",
+      dataType: "json",
+      success: function (response) {
+          console.log(response);
+
+          let modalBody = $("#Incentive_history .modal-body");
+          modalBody.empty(); 
+
+          if (response.Details.length === 0) {
+              modalBody.append(`<p class="text-muted text-center">No incentive data available</p>`);
+          } else {
+              let tableContent = `
+              <h2 id="vada" hidden>${name}</h2>
+                  <table class="table">
+                      <thead>
+                          <tr>
+                              <th class="pb-4">Bill ID</th>
+                              <th class="pb-4">Customer ID</th>
+                              <th class="pb-4">Product Value</th>
+                              <th class="pb-4">Payment Status</th>
+                              <th class="pb-4">Created At</th>
+                          </tr>
+                      </thead>
+                      <tbody id="Table_data">`;
+
+              $.each(response.Details, function (index, item) {
+                  tableContent += `
+                      <tr data-name="${name}"> <!-- Store Name in Row -->
+                          <td hidden>${name}</td>
+                          <td class="pb-4" data-label="Bill ID">${item.bill_id}</td>
+                          <td class="pb-4" data-label="Customer ID">${item.customer_name}</td>
+                          <td class="pb-4" data-label="Product Value"><i class="fa-solid fa-indian-rupee-sign"></i> ${item.product_value}</td>
+                          <td class="pb-4" data-label="Payment Status">${item.payment_status}</td>
+                          <td class="pb-4" data-label="Created At">${item.created_at}</td>
+                      </tr>`;
+              });
+
+              tableContent += `</tbody></table>`;
+              modalBody.append(tableContent);
+          }
+      },
+      error: function (xhr, status, error) {
+          console.log("Error:", xhr.responseText);
+          alert("Failed to load incentive history!");
+      }
+  });
+}
+
+
+function GetStatus_month() {
+  let name = $("#vada").text() 
+  console.log(name)
+  if (!name) {
+      alert("No user selected!");
+      return;
+  }
+
+  let month = $("#month").val();
+  let year = $("#year").val();
+
+  $.ajax({
+      url: '/Get_incentive_month/'+ month +'/'+year+'/'+ name +'/', 
+      type: "GET",
+      contentType: "json",
+      success: function (response) {
+          $("#Table_data").empty();
+
+          if (response.Details.length === 0) {
+              $("#Table_data").append(`
+                  <tr>
+                      <td colspan="5" class="text-center text-muted">No data available</td>
+                  </tr>
+              `);
+          } else {
+              $.each(response.Details, function (index, item) {
+                  $("#Table_data").append(`
+                      <tr>
+                        
+                          <td class="pb-4" data-label="Bill ID">${item.bill_id}</td>
+                          <td class="pb-4" data-label="Customer Name">${item.customer_name}</td>
+                          <td class="pb-4" data-label="Product Value"><i class="fa-solid fa-indian-rupee-sign"></i> ${item.product_value}</td>
+                          <td class="pb-4" data-label="Payment Status">${item.payment_status}</td>
+                          <td class="pb-4" data-label="Created At">${item.created_at}</td>
+                      </tr>
+                  `);
+              });
+          }
+      },
+      error: function (xhr, status, error) {
+          console.log("Error:", xhr.responseText);
+          alert("Failed to filter data!");
+      }
+  });
+}
+
+
+</script>
+
+<!-- Register_user -->
+{% endblock %}

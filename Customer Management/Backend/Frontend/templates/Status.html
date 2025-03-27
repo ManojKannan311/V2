@@ -1,0 +1,690 @@
+{% extends 'Base.html' %}
+{% block pagetitle %}
+CMS | Task Status
+{% endblock %}
+{% block body %}
+<style>
+    .modal-header,
+    .modal-footer {
+        border-bottom: none !important;
+        border-top: none !important;
+    }
+
+    @media (max-width: 768px) {
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            display: none;
+        }
+
+        tbody tr {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            padding: 10px;
+        }
+
+        tbody td {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tbody td:last-child {
+            border-bottom: none;
+        }
+
+        tbody td::before {
+            content: attr(data-label);
+            font-weight: bold;
+            flex: 1;
+            text-align: left;
+        }
+
+        tbody td span {
+            flex: 2;
+            text-align: right;
+        }
+    }
+
+    .table-responsive {
+        max-height: 500px;
+        overflow-y: auto;
+        display: block;
+    }
+
+    .table thead {
+        position: sticky;
+        top: 0;
+        background: #021182;
+        z-index: 10;
+        color: #021182;
+    }
+
+
+    #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5); /* Dark overlay with opacity */
+        display: none;
+        z-index: 9999; /* Ensure it appears on top */
+    }
+    
+    /* Centered Loader */
+    .loader-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-lg-12">
+            <div class="card shadow rounded">
+                <div class="card-body">
+                    <div class="container-fluid">
+                        <div class="row align-items-center">
+                            <div class="col-12 col-md-6">
+                                <h4 class="text-center text-md-start">Task Status</h4>
+                            </div>
+                            <div class="col-12 col-md-6 d-flex justify-content-center justify-content-md-end">
+                                <nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='%236c757d'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+                                    <ol class="breadcrumb mb-0">
+                                        <li class="breadcrumb-item">
+                                            <a href="#" class="text-decoration-none">Admin</a>
+                                        </li>
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'Landingpage' %}" class="text-decoration-none">Dashboard</a>
+                                        </li>
+                                        <li class="breadcrumb-item">
+                                            <a href="#" class="text-decoration-none active" active>Task Status</a>
+                                        </li>
+                                    </ol>
+                                </nav>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    
+                  
+                      </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="messages-container">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="row">
+
+                        <div class="col-md-3">
+                            <label for="update_C_status" class="form-label">Status Filter</label>
+                            <select class="form-select" onchange="GetStatus()" id="status" name="status">
+                                <option  value="Pending">Select</option>
+                                <option value="Pending">Pending</option>
+                                <option value="On Hold">On Hold </option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled ">Cancelled </option>
+                            </select>
+                        </div>
+                        <div id="overlay">
+                            <div class="loader-container">
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 mt-4">
+                            <a href="#"  onclick="gEt_customerDetails()"  class="btn btn-danger">
+                                Clear <i class="fa-solid fa-filter-circle-xmark ms-2"></i>
+                            </a>
+                        </div>
+                        <div class="table-responsive">
+
+                            <table class="table table-hover mt-5">
+                                <thead>
+                                    <tr>
+                                       <th class="pb-4">Customer Id</th>
+                                        <th class="pb-4 ">Created Date</th>
+                                        <th class="pb-4">Name</th>
+                                        <th class="pb-4">Phone number</th>
+                                        <th class="pb-4">Email Id</th>
+                                        <th class="pb-4">Requried date</th>
+                                        <th class="pb-4">Assigned to</th>
+                                        <th class="pb-4">Status</th>
+                                        <th class="pb-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="Table_data">
+
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Feedback Modal -->
+<div class="modal fade" id="Feedback" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="staticBackdropLabel">Customer Feedback <span><i class="fa-solid fa-star text-warning"></i></i></span></h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <label for="" class="form-label fw-bolder">FeedBack (<span id="date" class="text-info"></span>)</label>
+            <p id="ER"></p>
+            <label for="" class="form-label fw-bolder">Phone Number</label>
+            <p id="ph"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+<!-- Feedback Modal End -->
+<!-- Customer Details -->
+
+  <div class="modal fade" id="Customer_Details" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalLabel">Customer Details</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+<!-- Customer Details -->
+
+
+
+<section>
+    <div class="modal fade" id="Edit_Customer" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="editBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editBackdropLabel">Edit Customer</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="updateCustomerForm">
+                        <input type="text" value="{{ csrf_token }}" name="CSRF" id="CSRF" hidden>
+
+                        <input type="hidden" id="customer_id" name="customer_id" value="">
+                        <!-- Hidden field for customer ID -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="update_name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="update_name" name="update_name" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_Email_id" class="form-label">Email Id</label>
+                                <input type="text" class="form-control" id="update_Email_id" name="update_Email_id"
+                                    required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_phone_number" class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="update_phone_number"
+                                    name="update_phone_number" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_Requried_d" class="form-label">Required Date</label>
+                                <input type="date" class="form-control" id="update_Requried_d" name="update_Requried_d">
+                            </div>
+
+                            <!-- <div class="col-md-6">
+                                <label for="update_Product" class="form-label">Product</label>
+                                <select class="form-select" id="update_Product" name="update_Product">
+                                    <option value="#" disabled>Select</option>
+                                </select>
+                            </div> -->
+
+                            <div class="col-md-6">
+                                <label for="update_Product_Price" class="form-label">Product Price</label>
+                                <input type="texts" class="form-control" id="update_Product_Price"
+                                    name="update_Product_Price" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_Reminder_d" class="form-label">Reminder Date</label>
+                                <input type="date" class="form-control" id="update_Reminder_d" name="update_Reminder_d">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_Staff_Assign" class="form-label">Assign To</label>
+                                <select class="form-select" id="update_Staff_Assign" name="update_Staff_Assign">
+                                    <option value="#" disabled>Select</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="update_Payment" class="form-label">Mode of Payment</label>
+                                <select class="form-select" id="update_Payment" name="update_Payment">
+                                    <option value="#" disabled>Select</option>
+                                    <option value="COD">COD</option>
+                                    <option value="Online Payment">Online Payment</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_C_status" class="form-label">Status</label>
+                                <select class="form-select" id="update_C_status" name="update_C_status">
+                                    <option value="#" disabled>Select</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="On Hold">On Hold </option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+
+                            </div>
+
+
+                            <div class="col-md-6">
+                                <label for="update_address" class="form-label">Address</label>
+                                <textarea class="form-control" id="update_address" name="update_address" rows="3"
+                                    required></textarea>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_Enquiry_details" class="form-label">Enquiry details</label>
+                                <textarea class="form-control" id="update_Enquiry_details"
+                                    name="update_sEnquiry_details" rows="3" required></textarea>
+                            </div>
+
+                            <div class="col-12 text-end">
+                                <button type="submit" class="btn btn-primary w-100 w-md-auto">Update</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script>
+    $("#updateCustomerForm").submit(function (event) {
+        event.preventDefault();
+
+        const formData = {
+            name: $("#update_name").val(),
+            Email_id: $("#update_Email_id").val(),
+            phone_number: $("#update_phone_number").val(),
+            Requried_date: $("#update_Requried_d").val(),
+            Reminder_date: $("#update_Reminder_d").val(),
+            Product_Price: $("#update_Product_Price").val(),
+            address: $("#update_address").val(),
+            Enquiry_details: $("#update_Enquiry_details").val(),
+            product_id: $("#update_Product").val(),
+            Staff_Assign_id: $("#update_Staff_Assign").val(),
+            Payment: $("#update_Payment").val(),
+            status: $("#update_C_status").val(),
+        };
+
+        let csrfToken = $("#CSRF").val();
+        let customerId = $("#customer_id").val();
+        console.log("Sending Data:", formData);
+
+        $.ajax({
+            url: "/Get_customer/" + customerId,
+            type: "POST",
+            data: JSON.stringify(formData),
+            contentType: "application/json",
+            headers: {
+                "X-CSRFToken": csrfToken
+            },
+            success: function (response) {
+                $("#Edit_Customer").modal("hide");
+                window.location.reload()
+            },
+            error: function (xhr, status, error) {
+                console.log("Error:", xhr.responseText);
+                alert("Update failed!");
+            }
+        });
+    });
+
+    function fetchCustomerDetails(customerId) {
+        //$(".spinner-border").removeAttr("hidden");
+        //$(".col-lg-6").addClass("col-md-disable");
+
+        // Fetch Staff Details
+        $.ajax({
+            url: "/Staff_details/",
+            method: "GET",
+            dataType: "json",
+            success: function (response) {
+                console.log(response);
+
+                // Clear and append default option
+                $("#update_Staff_Assign").empty().append('<option value="#" disabled selected>Select Staff</option>');
+
+                // Append staff options
+                $.each(response.Staff_details, function (index, staff) {
+                    $("#update_Staff_Assign").append(`<option value="${staff.id}">${staff.username}</option>`);
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error("Error:", error);
+            }
+        });
+
+        // Fetch Customer Details
+        $.ajax({
+            url: "/Get_customer/" + customerId,
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.Customer_details.length > 0) {
+                    let data = response.Customer_details[0];
+
+                    // Populate form fields
+                    $("#customer_id").val(customerId);
+                    $("#update_name").val(data.name);
+                    $("#update_Email_id").val(data.Email_id);
+                    $("#update_phone_number").val(data.phone_number);
+                    $("#update_Requried_d").val(data.Requried_date);
+                    $("#update_Reminder_d").val(data.Reminder_date);
+                    $("#update_Product_Price").val(data.Product_Price);
+                    $("#update_address").val(data.address);
+                    $("#update_Enquiry_details").val(data.Enquiry_details);
+                    $("#update_Payment").val(data.Payment);
+
+                    // Update Staff selection
+                    setTimeout(() => {
+                        $("#update_Staff_Assign").val(data.Staff_Assign_id).change();
+                        $("#update_C_status").val(data.status).change();
+
+                    }, 100);
+
+                    // Show modal
+                    $("#Edit_Customer").modal("show");
+                } else {
+                    alert("Customer details not found!");
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error fetching data: ", error);
+                alert("Failed to fetch customer details!");
+            },
+            complete: function () {
+                $(".spinner-border").attr("hidden", true);
+                $(".col-lg-6").removeClass("col-md-disable");
+            }
+        });
+
+
+    }
+    const get_FD = (id) => {
+        // Reset previous data before making a new request
+        $("#ER").text("Loading...");
+        $("#ph").text("Loading...");
+    
+        $.ajax({
+            url: "/Customer_feedback/" + id,
+            method: "GET",
+            success: function (EQ) {
+                console.log(EQ)
+                if (!EQ || !EQ.Eq) {
+                    console.error("Invalid response:", EQ);
+                    $(".modal-body").html(`<p>Error fetching feedback.</p>`);
+                    return;
+                }    
+                let qr = EQ.Eq.Feed_back;
+                let phone = EQ.Eq.phone_number;
+                let dates =EQ.Eq.updated_at;
+                $("#date").text(dates)
+                $("#ER").text(qr && qr.trim() !== "" ? qr : "No feedback available.");
+                $("#ph").text(phone && phone.trim() !== "" ? phone : "No phone number available");
+    
+                $("#Feedback").modal("show");
+            },
+            error: function (xhr, status, error) {
+                alert("Error: " + error);
+            }
+        });
+    };
+    
+
+
+
+
+
+    $(document).ready(function(){
+        gEt_customerDetails()
+    })
+    $(document).ready(function () {
+        $(".alert").each(function () {
+            var $alert = $(this);
+            $alert.addClass("show");
+
+            setTimeout(function () {
+                $alert.addClass("hide");
+            }, 3000);
+        });
+    });
+
+    function formatDateTime(dateString) {
+        let date = new Date(dateString);
+        return date.toLocaleString("en-US", {
+            year: "numeric",
+            month: "short", // "Mar"
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true // AM/PM format
+        });
+    }
+
+    const Get_specific = (id) => {
+        $.ajax({
+            url: `/Get_customer/${id}`,
+            type: "GET",
+            success: function (response) {
+                if (response.Customer_details.length > 0) {
+                    let customer = response.Customer_details[0];
+    
+                    // Create a well-structured display
+                    let detailsHtml = `
+                        <div class="container">
+                            <h5 class="text-primary">Customer ID: ${customer.Customer_ID}</h5>
+                            <p><strong>Name:</strong> ${customer.name}</p>
+                            <p><strong>Phone:</strong> <a href="tel:${customer.phone_number}">${customer.phone_number}</a></p>
+                            <p><strong>Email:</strong> <a href="mailto:${customer.Email_id}">${customer.Email_id}</a></p>
+                            <p><strong>Address:</strong> ${customer.address}</p>
+                            <p><strong>Enquiry:</strong> ${customer.Enquiry_details}</p>
+                            <hr>
+                            <h6 class="text-danger">Status: ${customer.status}</h6>
+                            <p><strong>Required Date:</strong> ${customer.Requried_date}</p>
+                            <p><strong>Reminder Date:</strong> ${customer.Reminder_date}</p>
+                            <p><strong>Payment:</strong> ${customer.Payment}</p>
+                            <p><strong>Staff Assigned:</strong> ${customer.Staff_Assign__username}</p>
+                        </div>`;
+    
+                    // Inject into modal body
+                    $("#Customer_Details .modal-body").html(detailsHtml);
+    
+                    // Show the modal
+                    $("#Customer_Details").modal("show");
+                } else {
+                    alert("No customer data found!");
+                }
+            },
+            error: function (xhr) {
+                console.log("Error:", xhr.responseText);
+                alert("Failed to load customer details!");
+            }
+        });
+    };
+    
+
+
+
+    const GetStatus=()=>{
+        let Value = $("#status").val()
+        $("#overlay").fadeIn();
+        $("#downloadBrochureBtn").prop("disabled", true);
+        $.ajax({
+            url: "/Filter_Status/" + Value,
+            type: "GET",
+            contentType:"json",
+            success: function (response) {
+                console.log(response);
+    
+                // Clear existing table data before appending new data
+                $("#Table_data").empty();
+    
+                if (response.Customer_details.length === 0) {
+                    $("#Table_data").append(`
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">No data available</td>
+                        </tr>
+                    `);
+                } else {
+                    $.each(response.Customer_details, function (index, item) {
+                        let badgeClass = "text-bg-primary"; 
+    
+                        if (item.status === "Cancelled") {
+                            badgeClass = "text-bg-danger";
+                        } else if (item.status === "Pending") {
+                            badgeClass = "text-bg-warning";
+                        }
+                        $("#Table_data").append(`
+                            <tr>
+                                <td data-label="Customer Id" class="pt-4 pb-4 fw-bolder"><a class="text-decoration-none" onclick="get_FD('${item.Customer_ID}')" href="#">${item.Customer_ID}</a></td>
+                                <td data-label="Created Date" class="pt-4 pb-4">${formatDateTime(item.created_at)}</td>
+                                <td data-label="Name" class="pt-4 pb-4">${item.name}</td>
+                                <td data-label="Phone Number" class="pt-4 pb-4">${item.phone_number}</td>
+                                <td data-label="Email Id" class="pt-4 pb-4">${item.Email_id}</td>
+                                <td data-label="Required Date" class="pt-4 pb-4">${item.Requried_date}</td> 
+                                <td data-label="Assigned To" class="pt-4 pb-4"><span><span class="badge" style="background-color: #B2A5FF;" >${item.Staff_Assign__username}</span></span></td>                           
+                                                          
+                                <td data-label="Status" class="pt-4 pb-4 "><span><span class="badge ${badgeClass}">${item.status}</span></span></td>
+                                <td data-label="Action" class="pt-4 pb-4 text-dark"><a href="#" onclick="Get_specific(${item.id})" class="text-dark"><span><i class="fa-duotone fa-solid fa-eye"></i></span></a> <span class="ps-2"><a href="#" onclick="fetchCustomerDetails(${item.id})" class="text-dark"><span><i class="fa-solid fa-pen-to-square"></i></span></a></span></td>
+                                
+                                
+
+
+
+                                
+                            </tr>
+                        `);
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                console.log("Error:", xhr.responseText);
+                alert("Update failed!");
+            },
+            complete: function () {
+
+                $("#overlay").fadeOut();
+                $("#downloadBrochureBtn").prop("disabled", false);
+            }
+        });
+   
+    }
+
+
+
+    // Cancel Filter
+
+    const gEt_customerDetails = () => {
+        $.ajax({
+            url: "/customers_details/",
+            method: "GET",
+            dataType: "json",
+            success: function (response) {
+                console.log(response)
+                $("#Table_data").empty(); 
+
+                if (response.customers.length === 0) {
+                    $("#Table_data").append(`
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No data available</td>
+                        </tr>
+                    `);
+                } else {
+                    $.each(response.customers, function (index, item) {
+                        let badgeClass = "text-bg-primary"; 
+    
+                        if (item.status === "Cancelled") {
+                            badgeClass = "text-bg-danger";
+                        } else if (item.status === "Pending") {
+                            badgeClass = "text-bg-warning";
+                        }
+                        $("#Table_data").append(`
+                            <tr>
+                                <td data-label="Customer Id" class="pt-4 pb-4 fw-bolder"><a class="text-decoration-none" onclick="get_FD('${item.Customer_ID}')" href="#">${item.Customer_ID}</a></td>
+                                <td data-label="Created Date" class="pt-4 pb-4">${formatDateTime(item.created_at)}</td>
+                                <td data-label="Name" class="pt-4 pb-4">${item.name}</td>
+                                <td data-label="Phone Number" class="pt-4 pb-4">${item.phone_number}</td>
+                                <td data-label="Email Id" class="pt-4 pb-4">${item.Email_id}</td>
+                                <td data-label="Required Date" class="pt-4 pb-4">${item.Requried_date}</td>
+                                <td data-label="Assigned To" class="pt-4 pb-4"><span><span class="badge" style="background-color: #B2A5FF;" >${item.Staff_Assign__username}</span></span></td>                           
+                                <td data-label="Status" class="pt-4 pb-4 "><span><span class="badge ${badgeClass}" >${item.status}</span></span></td>
+                                <td data-label="Action" class="pt-4 pb-4 text-dark"><a href="#" onclick="Get_specific(${item.id})" class="text-dark"><span><i class="fa-duotone fa-solid fa-eye"></i></span></a> <span class="ps-2"><a href="#" onclick="fetchCustomerDetails(${item.id})" class="text-dark"><span><i class="fa-solid fa-pen-to-square"></i></span></a></span></td>
+                                
+                               
+
+                            </tr>
+                        `);
+                    });
+                }
+            },
+
+            error: function (xhr, status, error) {
+                console.error("Error fetching customer details:", error);
+            }
+        });
+    };
+
+</script>
+{% endblock %}

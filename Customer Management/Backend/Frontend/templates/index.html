@@ -1,0 +1,303 @@
+{% extends 'Base.html' %}
+{% block pagetitle %}
+CMS | Dashboard
+{% endblock %}
+{% block body %}
+<style>
+  /* Table styling */
+  .table th,
+  .table td {
+    vertical-align: middle;
+    font-size: 16px;
+  }
+
+  /* Status dot styling */
+  .status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Online status (green with glow) */
+  .online {
+    background-color: #28a745;
+    box-shadow: 0 0 8px #28a745;
+  }
+
+  /* Offline status (red with glow) */
+  .offline {
+    background-color: #00631c;
+    box-shadow: 0 0 8px #02e25f;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .table {
+      font-size: 14px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+    }
+  }
+</style>
+<div class="container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-lg-3 col-md-6 col-sm-6 pb-4">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title"><i class="fa-solid fa-money-bill" style="color:  #000957;"></i> Total Sales </h5>
+          <h6 class="card-subtitle mb-2 text-body-secondary">Total Month <i class="fa-solid fa-calendar-days"
+              style="color:  #000957;"></i></h6>
+          <p class="card-text text-end fs-1 fw-bold" style="color:  #000957;"><i
+              class="fa-solid fa-indian-rupee-sign"></i> {{total_sales}}</p>
+
+
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6 col-sm-6 pb-4">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title"><i class="fa-solid fa-users-line" style="color:  #000957;"></i> Total customer </h5>
+          <h6 class="card-subtitle mb-2 text-body-secondary">Total Month <i class="fa-solid fa-calendar-days"
+              style="color:  #000957;"></i></h6>
+          <p class="card-text text-end fs-1 fw-bold" style="color:  #000957;">{{total_customers}}</p>
+
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6 col-sm-6 pb-4">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title"><i class="fa-solid fa-clock-rotate-left" style="color:  #000957;"></i> Enquiry pending
+          </h5>
+          <h6 class="card-subtitle mb-2 text-body-secondary">Total Month <i class="fa-solid fa-calendar-days"
+              style="color:  #000957;"></i></h6>
+          <p class="card-text text-end fs-1 fw-bold" style="color:  #000957;">{{pending_customers}}</p>
+
+
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6 col-sm-6 pb-4">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title"><i class="fa-solid fa-user-check" style="color:  #000957;"></i> Enquiry completed </h5>
+          <h6 class="card-subtitle mb-2 text-body-secondary">Total Month <i class="fa-solid fa-calendar-days"
+              style="color:  #000957;"></i></h6>
+          <p class="card-text text-end fs-1 fw-bold" style="color:  #000957;">{{completed_customers}}</p>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-lg-8 col-md-12 mb-4 ">
+      <div class="bg-white p-4  shadow-lg" style="border-radius:2%;">
+        <canvas id="salesChart" width="100%" height="400"></canvas>
+      </div>
+    </div>
+    <!-- Active Users Table -->
+    <div class="col-lg-4 col-md-12 mb-5">
+  
+      <div class="bg-white p-4  shadow-lg" style="border-radius:2%;">
+        <canvas id="User_salesChart" width="100%" height="400"></canvas>
+      </div>
+      <!-- <div class="card p-3 shadow-lg" style="height: 450px;">
+        <div class="card-title font-weight-bold text-center">
+          <h2>Staff Status</h2>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table ">
+              <thead>
+                <tr>
+                  <th class="pb-3 pt-3">User</th>
+                  <th class="pb-3 pt-3">Role's</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for i in users %}
+                <tr>
+                  <td class="pb-3 pt-3">{{ i.username | title }}</td>
+                  <td class="pb-3 pt-3">
+                    <span class="status-dot {% if i.status == 'Online' %}online{% else %}offline{% endif %}"></span>
+                    {{ i.role | title }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div> -->
+
+
+    </div>
+
+    <!-- Sales Chart -->
+
+  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  $(document).ready(function () {
+    $.ajax({
+      url: "/sales_chart/",
+      type: "GET",
+      dataType: "json",
+      success: function (response) {
+        console.log("Sales Data:", response);
+
+        var ctx = document.getElementById("salesChart").getContext("2d");
+        var gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, "rgba(75, 192, 192, 0.7)");
+        gradient.addColorStop(1, "rgba(75, 192, 192, 0.2)");
+        var salesChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: response.labels,
+            datasets: [{
+              label: "Total Month Sales",
+              data: response.sales_values,
+              backgroundColor: gradient, // Use gradient
+              borderColor: "rgba(75, 192, 192, 1)",
+              borderWidth: 2,
+              borderRadius: 10, // Rounded corners
+              barThickness: 40 // Adjust bar width
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                labels: {
+                  color: "#333",
+                  font: { size: 14, weight: "bold" }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: "#333",
+                  font: { size: 12 }
+                },
+                grid: {
+                  color: "rgba(200, 200, 200, 0.3)" // Light grid lines
+                }
+              },
+              x: {
+                ticks: {
+                  color: "#333",
+                  font: { size: 12 }
+                },
+                grid: {
+                  display: false // Hide x-axis grid
+                }
+              }
+            },
+            animation: {
+              duration: 1500, // Smooth animation
+              easing: "easeOutBounce"
+            }
+          }
+        });
+      },
+      error: function (xhr, status, error) {
+        console.error("Error fetching sales data:", error);
+        alert("Failed to load sales data!");
+      }
+    });
+
+
+    $.ajax({
+      url: `/user_sales_chart/`,
+      type: "GET",
+      dataType: "json",
+      success: function (response) {
+        console.log("Sales Data:", response);
+
+        var ctx = document.getElementById("User_salesChart").getContext("2d");
+        var gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, "rgba(75, 192, 192, 0.7)");
+        gradient.addColorStop(1, "rgba(75, 192, 192, 0.2)");
+        var backgroundColors = [
+          "#7AB2D3", // Light Blue
+          "#B9E5E8", // Bright Pink
+          "#9B7EBD", // Soft Blue
+          "#D4BEE4", // Orange
+          "#98DED9", // Green
+          "#0A1931"  // Dark Blue (For contrast)
+        ];
+
+        var borderColors = [
+          "#F5EFFF", // Dark Blue
+          "#E5D9F2", // Darker Pink
+          "#CDC1FF", // Standard Blue
+          "#A294F9", // Reddish Orange
+          "#17A589", // Teal Green
+          "#1C2833"  // Dark Gray-Blue
+        ];
+        var salesChart = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: response.labels,
+            datasets: [{
+              label: "Total Month Sales",
+              data: response.sales_values,
+              backgroundColor: backgroundColors.slice(0, response.labels.length),
+              borderColor: borderColors.slice(0, response.labels.length),
+              borderWidth: 2,
+              borderRadius: 10 // Rounded corners
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                labels: {
+                  color: "#333",
+                  font: { size: 14, weight: "bold" }
+                }
+              }
+            },
+            scales: {
+              x: {
+                display: false // Hides X-axis
+              },
+              y: {
+                display: false // Hides Y-axis
+              }
+            },
+            animation: {
+              duration: 1500,
+              easing: "easeOutBounce"
+            }
+          }
+        });
+        
+      },
+    })
+
+  });
+
+</script>
+
+{% endblock %}

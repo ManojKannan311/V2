@@ -1,0 +1,509 @@
+{% extends 'Base.html' %}
+{% block pagetitle %}
+CMS | My Task
+{% endblock %}
+
+{% block body %}
+<style>
+    .modal-header {
+        border-bottom: none !important;
+    }
+
+    @media (max-width: 768px) {
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            display: none;
+        }
+
+        tbody tr {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            padding: 10px;
+        }
+
+        tbody td {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tbody td:last-child {
+            border-bottom: none;
+        }
+
+        tbody td::before {
+            content: attr(data-label);
+            font-weight: bold;
+            flex: 1;
+            text-align: left;
+        }
+
+        tbody td span {
+            flex: 2;
+            text-align: right;
+        }
+    }
+</style>
+<div class="container-fluid" >
+    <div class="row mb-3">
+        <div class="col-lg-12">
+            <div class="card shadow rounded ">
+                <div class="card-body">
+                    <div class="container-fluid" >
+                        <div class="row align-items-center">
+                            <div class="col-12 col-md-6">
+                                <h4 class="text-center text-md-start">My Task</h4>
+                            </div>
+                            <div class="col-12 col-md-6 d-flex justify-content-center justify-content-md-end">
+                                <nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='%236c757d'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+                                    <ol class="breadcrumb mb-0">
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'User_dashboard' %}" class="text-decoration-none ">Home</a>
+                                        </li>
+                                    </ol>
+                                </nav>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    
+                  
+                      </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12 col-md-12">
+            <div class="card shadow rounded">
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="messages-container">
+                        {% for message in messages %}
+                        <div class="alert 
+                {% if 'error' in message.tags %}alert-danger
+                {% elif 'success' in message.tags %}alert-success
+                {% elif 'warning' in message.tags %}alert-warning
+                {% elif 'info' in message.tags %}alert-info
+                {% endif %}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="row mt-4">
+                        <div class="col-lg-6 col-md-disable">
+                            <div class="spinner-border" role="status" hidden>
+                                <span class="visually-hidden">Loading...</span>
+                                <h2>Welcome {{name}}</h2>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-md-12 text-end">
+                            <div class="dropdown">
+                                <button class="btn  dropdown-toggle fs-6 px-4 fw-semibold text-light" 
+                                        type="button" id="incentiveDropdown" data-bs-toggle="dropdown" 
+                                        aria-expanded="false" style="background-color: #000957;">
+                                    <span><i class="fa-solid fa-award"></i></span> Incentives
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="incentiveDropdown" style="background-color: #000957;">
+                                    <li>
+                                        <a class="dropdown-item text-light" href="#" onclick="Fullup()" 
+                                           data-bs-toggle="modal" data-bs-target="#Incentive_modal">Add Bill</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-light" data-bs-toggle="modal" 
+                                           data-bs-target="#incentive_history" href="#">My Incentive</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover mt-5">
+                            <thead>
+                                <tr>
+                                    <th class="pb-4">Customer ID</th>
+                                    <th class="pb-4">Name</th>
+                                    <th class="pb-4">Phone number</th>
+                                    <th class="pb-4">Email Id</th>
+                                    <th class="pb-4">Requried date</th>
+                                    <th class="pb-4">Current status</th>
+                                    <th class="pb-4">Staff</th>
+                                    <th class="pb-4">Call back</th>
+                                    <th class="pb-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="Table_data">
+                                {% for i in customers %}
+                                <tr>
+                                    <td data-label="Customer ID" class="pb-4 fst-normal"><a href="#"
+                                            style="text-decoration: none;font-weight:600;"
+                                            onclick="get_EQ('{{i.Customer_ID}}')">{{i.Customer_ID}}</a></td>
+                                    <td data-label="Name" class="pb-4 fst-normal">{{i.name}}</td>
+                                    <td data-label="Phone number" class="pb-4 fst-normal">{{i.phone_number}}</td>
+                                    <td data-label="Email Id" class="pb-4 fst-normal">{{i.Email_id}}</td>
+                                    <td data-label="Requried date" class="pb-4 fst-normal">{{i.Requried_date}}</td>
+                                    {% if i.status == "Pending" %}
+                                    <td data-label="Current status" class="pb-4 fst-normal "><span><span
+                                                class="badge text-bg-warning">{{i.status}}</span></span></td>
+                                    {% elif i.status == "Cancelled" %}
+                                    <td data-label="Current status" class="pb-4 fst-normal "><span><span
+                                                class="badge text-bg-danger  text-center">{{i.status}}</span></span>
+                                    </td>
+
+                                    {% else %}
+                                    <td data-label="Current status" class="pb-4 fst-normal "><span><span
+                                                class="badge text-bg-primary">{{i.status}}</span></span></td>
+                                    {% endif %}
+
+                                    <td data-label="Staff" class="pb-4 fst-normal">{{i.Staff_Assign__username}}</td>
+                                    <td data-label="Remainder" class="pb-4 fst-normal">{{i.Remainder_date}}</td>
+
+                                    <td data-label="Actions" class="pb-4">
+                                        <div class="dropdown">
+                                            <a href="#" class="text-dark" type="button" data-bs-toggle="dropdown"
+                                                aria-expanded="false">
+                                                <i class="fa-solid fa-ellipsis"></i>
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                <li class="p-2"><a class="dropdown-item  bg-dnager"
+                                                        onclick="get_update('{{i.id}}')" href="#">Update Status
+                                                    </a>
+                                                </li>
+
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="Status" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog ">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Customer Status update </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="" method="post">
+                    <input type="text" value="{{ csrf_token }}" name="CSRF" id="CSRF" hidden>
+
+                    <input type="hidden" name="getid" id="getid" hidden>
+                    <label for="status" class="form-label">Current Status</label>
+                    <select name="Status_update" id="Status_update" class="form-control ">
+                        <option value="#">Select</option>
+                        <option value="Pending">Pending</option>
+                        <option value="On Hold">On Hold </option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                    <label for="Remainder_date" class="form-label mt-3">Remainder date</label>
+                    <input type="date" name="Remainder_date" class="form-control" id="Remainder_date">
+
+                    <label for="feedback" class="form-label mt-3">FeedBack</label>
+                    <textarea name="feedback" id="feedback" class="form-control" cols="30" rows="10"
+                        placeholder="Customer Feedback"></textarea>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="update()"> Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Incentive Modal -->
+
+<div class="modal fade" id="Incentive_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Incentive Form <i class="fa-solid fa-trophy"></i>
+                </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="incentiveForm" action="/user_inc/" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row gy-3">
+                            <div class="col-md-6">
+                                <label for="bill_id" class="form-label">Bill NO</label>
+                                <input type="text" class="form-control" id="bill_id" name="bill_id" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="customer_name" class="form-label">Customer ID</label>
+                                <input type="text" class="form-control" id="customer_name" name="customer_name"
+                                    required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="Staff_ID" class="form-label">Staff ID </label>
+                                <select class="form-select" id="Staff_Assign" name="Staff_Assign">
+                                    {% for i in name %}
+                                    <option value="{{i.id}}" selected>{{i.username}}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="product_value" class="form-label">Purchase Value ($)</label>
+                                <input type="number" step="0.01" class="form-control" id="product_value"
+                                    name="product_value" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="courier_charge" class="form-label">Courier Charge ($)</label>
+                                <input type="number" step="0.01" class="form-control" id="courier_charge"
+                                    name="courier_charge" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="payment_status" class="form-label">Payment Method</label>
+                                <select class="form-select" id="payment_status" name="payment_status" required>
+                                    <option value="Cash on delivery">Cash on delivery</option>
+                                    <option value="Online payment">Online payment</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="courier_id" class="form-label">Courier ID</label>
+                                <input type="text" class="form-control" id="courier_id" name="courier_id" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="couriered_date" class="form-label">Couriered Date</label>
+                                <input type="date" class="form-control" id="couriered_date" name="couriered_date"
+                                    required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Submit</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+<!-- Incentive End -->
+
+
+<!-- Incentive history -->
+<div class="modal fade" id="incentive_history" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl   ">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel"><i class="fa-solid fa-clock-rotate-left"></i>
+                    Incentive History </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table ">
+                    <thead>
+                        <tr>
+                            <th>Bill ID</th>
+                            <th>Customer Name</th>
+                            <th>Payment Status</th>
+                            <th>Courier ID</th>
+                            <th>Staff Name</th>
+                            <th>Purchase value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in incentive %}
+                        <tr>
+                            <td class="fst-normal pt-3 pb-3" data-label="Bill ID">{{i.bill_id}}</td>
+                            <td class="fst-normal pt-3 pb-3" data-label="Name">{{i.customer_name}}</td>
+                            <td class="fst-normal pt-3 pb-3" data-label="Payment"><span> <span
+                                        class="badge text-bg-success">{{i.payment_status}}</span></span></td>
+                            <td class="fst-normal pt-3 pb-3" data-label="Courier ID">{{i.courier_id}}</td>
+                            <td class="fst-normal pt-3 pb-3" data-label="Staff Name">{{i.staff_id__username}}</td>
+                            <td class="fst-normal pt-3 pb-3" data-label="Purchase value"><i
+                                    class="fa-solid fa-indian-rupee-sign"></i> {{i.product_value}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!--Incentive history End -->
+
+<!-- Enquiery Modal -->
+<div class="modal fade" id="Enquiery" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Customer Enquiery </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label for="" class="form-label fw-bolder">Enquiery Details</label>
+                <p id="ER"></p>
+                <label for="" class="form-label fw-bolder">Phone Number</label>
+                <p id="ph"></p>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Enquiery Modal End -->
+
+
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script>
+
+    const get_EQ = (id) => {
+        $.ajax({
+            url: "/EQ/" + id,
+            method: "GET",
+            contentType: "json",
+            success: function (EQ) {
+                let qr = EQ.Eq.Enquiry_details
+                if (qr) {
+                    $("#ER").text(qr)
+                    $("#ph").text(EQ.Eq.phone_number)
+                } else {
+                    $(".modal-body").html(`<p>No details found.</p>`);
+                }
+                $("#Enquiery").modal("show")
+            },
+
+
+            error: function (xhr, status, error) {
+                alert("Error:", error);
+            }
+        })
+
+
+    }
+
+
+
+    $(document).ready(function () {
+
+    })
+    const get_update = (id) => {
+        default_value(id)
+        console.log(id)
+        $("#getid").val(id)
+        $("#Status").modal("show")
+    }
+
+
+    const default_value = (customerId) => {
+        $.ajax({
+            url: "/Update_status/" + customerId,
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.Customer_details.length > 0) {
+                    let data = response.Customer_details[0];
+
+                    setTimeout(() => {
+                        $("#Status_update").val(data.status.trim()).change();
+
+                        if (data.Remainder_date) {
+                            let formattedDate = new Date(data.Remainder_date).toISOString().split("T")[0];
+                            $("#Remainder_date").val(formattedDate);
+                        } else {
+                            $("#Remainder_date").val(""); // Clear if no date is available
+                        }
+                    }, 100);
+
+                } else {
+                    alert("Customer details not found!");
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error fetching data: ", error);
+                alert("Failed to fetch customer details!");
+            },
+            complete: function () {
+                $(".spinner-border").attr("hidden", true);
+                $(".col-lg-6").removeClass("col-md-disable");
+            }
+        });
+    }
+
+
+    const update = () => {
+
+        let id = $("#getid").val()
+        let csrfToken = $("#CSRF").val();
+
+        console.log(id)
+
+        const formData = {
+            name: $("#update_name").val(),
+            Email_id: $("#update_Email_id").val(),
+            phone_number: $("#update_phone_number").val(),
+            Requried_date: $("#update_Requried_d").val(),
+            Reminder_date: $("#update_Reminder_d").val(),
+            Product_Price: $("#update_Product_Price").val(),
+            address: $("#update_address").val(),
+            Enquiry_details: $("#update_Enquiry_details").val(),
+            product_id: $("#update_Product").val(),
+            Staff_Assign_id: $("#update_Staff_Assign").val(),
+            Payment: $("#update_Payment").val(),
+            feedback: $("#feedback").val(),
+            status: $("#Status_update").val(),
+            Remainder_date: $("#Remainder_date").val()
+        };
+
+        $.ajax({
+            url: "/Update_status/" + id,
+            method: "POST",
+            data: JSON.stringify(formData),
+            contentType: "application/json",
+            headers: {
+                "X-CSRFToken": csrfToken
+            },
+            success: function (data) {
+                if (data.success) {
+                    console.log("Update successful!");
+                    $("#Status").modal("hide"); // Close modal after successful update
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                } else {
+                    alert("Update failed: " + data.message);
+                }
+            },
+
+            error: function (xhr, status, error) {
+                alert("Error:", error);
+            }
+        })
+    }
+</script>
+{% endblock %}

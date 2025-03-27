@@ -1,0 +1,950 @@
+{% extends 'Base.html' %}
+{% block pagetitle %}
+CMS | Customer
+{% endblock %}
+{% block body %}
+<style>
+    .modal-header {
+        border-bottom: none !important;
+    }
+
+    @media (max-width: 768px) {
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            display: none;
+        }
+
+        tbody tr {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            padding: 10px;
+        }
+
+        tbody td {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tbody td:last-child {
+            border-bottom: none;
+        }
+
+        tbody td::before {
+            content: attr(data-label);
+            font-weight: bold;
+            flex: 1;
+            text-align: left;
+        }
+
+        tbody td span {
+            flex: 2;
+            text-align: right;
+        }
+    }
+
+
+
+    .table-responsive {
+        max-height: 400px;
+        overflow-y: auto;
+        display: block;
+    }
+
+    .table thead {
+        position: sticky;
+        top: 0;
+        background: #021182;
+        z-index: 10;
+        color: #021182;
+    }
+
+    #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5); /* Dark overlay with opacity */
+        display: none;
+        z-index: 9999; /* Ensure it appears on top */
+    }
+    
+    /* Centered Loader */
+    .loader-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    
+</style>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-lg-12">
+            <div class="card shadow rounded">
+                <div class="card-body">
+                    <div class="container-fluid">
+                        <div class="row align-items-center">
+                            <div class="col-12 col-md-6">
+                                <h4 class="text-center text-md-start">Add customer / History </h4>
+                            </div>
+                            <div class="col-12 col-md-6 d-flex justify-content-center justify-content-md-end">
+                                <nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='%236c757d'/%3E%3C/svg%3E&#34;);"
+                                    aria-label="breadcrumb">
+                                    <ol class="breadcrumb mb-0">
+                                        <li class="breadcrumb-item">
+                                            <a href="#" class="text-decoration-none">Admin</a>
+                                        </li>
+                                        {% if request.session.role and request.session.role != "admin" %}
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'Landingpage' %}" class="text-decoration-none">Dashboard</a>
+                                        </li>
+                                        {% else %}
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'Manager_task' %}" class="text-decoration-none">My task</a>
+                                        </li>
+                                        {% endif %}
+
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'User_customer_view' %}" class="text-decoration-none">Add
+                                                Customer</a>
+                                        </li>
+                                    </ol>
+                                </nav>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12 col-md-12">
+            <div class="card shadow rounded">
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="messages-container">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="row mt-4 mb-3">
+
+                        <label class="form-label fw-medium" for="C_number">Customer Number</label>
+                        <div id="overlay">
+                            <div class="loader-container">
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 d-flex align-items-center">
+                            <div>
+                                <input class="form-control me-2" type="tel" name="C_number" id="C_number"
+                                    style="width: 250px;" maxlength="12">
+                                <button class="btn mt-3" id="filter_num" onclick="gEt_customer_by_number()"
+                                    style="background-color: #021182; color:white">
+                                    <span><i class="fa-solid fa-filter"></i></span> Filter
+                                </button>
+                                <button class="btn mt-3" id="filter_num" onclick="reset()"
+                                    style="background-color: red; color:white">
+                                    <span><i class="fa-solid fa-repeat"></i></span> Reset
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-ms-12 text-end">
+                            <button class="btn" data-bs-toggle="modal" data-bs-target="#Add_Customer"
+                                style="background-color: #021182; color:white"><span><i
+                                        class="fa-solid fa-user-plus"></i></span> Add Enquiery</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+
+                        <table class="table table-hover mt-5">
+                            <thead>
+                                <tr>
+                                    <th class="pb-4">Customer ID</th>
+                                    <th class="pb-4 ">Created Date</th>
+                                    <th class="pb-4">Name</th>
+                                    <th class="pb-4">Phone number</th>
+                                    <th class="pb-4">Email Id</th>
+                                    <th class="pb-4">Assigned To</th>
+                                    <th class="pb-4">Requried date</th>
+                                    <th class="pb-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="Table_data">
+                                <tr id="loader">
+                                    <td colspan="6" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+<!-- Create Customer modal -->
+<section>
+    <div class="modal fade" id="Add_Customer" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="staticBackdropLabel">Create Enquiery</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="customerForm" method="post" action="/customers_details/">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="Email_id" class="form-label">Email Id</label>
+                                <input type="text" class="form-control" id="Email_id" name="Email_id" >
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="phone_number" name="phone_number" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="Requried_d" class="form-label">Required Date</label>
+                                <input type="date" class="form-control" id="Requried_d" name="Requried_d">
+                            </div>
+
+                            <!-- <div class="col-md-6">
+                                <label for="Product" class="form-label">Product</label>
+                                <select class="form-select" id="Product" name="Product">
+                                    <option value="#" disabled>Select</option>
+                                </select>
+                            </div> -->
+
+                            <div class="col-md-6">
+                                <label for="Product_Price" class="form-label">Price Range</label>
+                                <input type="texts" class="form-control" id="Product_Price" name="Product_Price"
+                                    >
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="Reminder_d" class="form-label">Reminder Date</label>
+                                <input type="date" class="form-control" id="Reminder_d" name="Reminder_d">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="Staff_Assign" class="form-label">Assign To</label>
+                                <select class="form-select" id="Staff_Assign" name="Staff_Assign" required>
+                                    <option value="#" disabled>Select</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="Payment" class="form-label">Mode of Payment</label>
+                                <select class="form-select" id="Payment" name="Payment">
+                                    <option value="#" disabled>Select</option>
+                                    <option value="COD">COD</option>
+                                    <option value="Online Payment">Online Payment</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="C_status" class="form-label">Status</label>
+                                <select class="form-select" id="C_status" name="C_status">
+                                    <option value="#" disabled>Select</option>
+                                    <option value="Pending" selected>Pending</option>
+                                    <option value="Completed">Completed</option>
+
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" name="address" rows="3" ></textarea>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="Enquiry_details" class="form-label">Enquiry details</label>
+                                <textarea class="form-control" id="Enquiry_details" name="Enquiry_details" rows="3"
+                                    ></textarea>
+                            </div>
+
+                            <div class="col-12 text-end">
+                                <button type="submit" class="btn btn-primary w-100 w-md-auto">Update</button>
+                            </div>
+                            <div class="col-12 text-end">
+                                <button type="reset" class="btn btn-danger w-100 w-md-auto">Reset</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- End of Create customer -->
+
+
+<section>
+    <div class="modal fade" id="Edit_Customer" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="editBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editBackdropLabel">Edit Customer</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="updateCustomerForm">
+                        <input type="text" value="{{ csrf_token }}" name="CSRF" id="CSRF" hidden>
+
+                        <input type="hidden" id="customer_id" name="customer_id" value="">
+                        <!-- Hidden field for customer ID -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="update_name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="update_name" name="update_name" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_Email_id" class="form-label">Email Id</label>
+                                <input type="text" class="form-control" id="update_Email_id" name="update_Email_id"
+                                    required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_phone_number" class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="update_phone_number"
+                                    name="update_phone_number" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_Requried_d" class="form-label">Required Date</label>
+                                <input type="date" class="form-control" id="update_Requried_d" name="update_Requried_d">
+                            </div>
+
+                            <!-- <div class="col-md-6">
+                                <label for="update_Product" class="form-label">Product</label>
+                                <select class="form-select" id="update_Product" name="update_Product">
+                                    <option value="#" disabled>Select</option>
+                                </select>
+                            </div> -->
+
+                            <div class="col-md-6">
+                                <label for="update_Product_Price" class="form-label">Product Price</label>
+                                <input type="texts" class="form-control" id="update_Product_Price"
+                                    name="update_Product_Price" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_Reminder_d" class="form-label">Reminder Date</label>
+                                <input type="date" class="form-control" id="update_Reminder_d" name="update_Reminder_d">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_Staff_Assign" class="form-label">Assign To</label>
+                                <select class="form-select" id="update_Staff_Assign" name="update_Staff_Assign">
+                                    <option value="#" disabled>Select</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="update_Payment" class="form-label">Mode of Payment</label>
+                                <select class="form-select" id="update_Payment" name="update_Payment">
+                                    <option value="#" disabled>Select</option>
+                                    <option value="COD">COD</option>
+                                    <option value="Online Payment">Online Payment</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_C_status" class="form-label">Status</label>
+                                <select class="form-select" id="update_C_status" name="update_C_status">
+                                    <option value="#" disabled>Select</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="On Hold">On Hold </option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+
+                            </div>
+
+
+                            <div class="col-md-6">
+                                <label for="update_address" class="form-label">Address</label>
+                                <textarea class="form-control" id="update_address" name="update_address" rows="3"
+                                    required></textarea>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="update_Enquiry_details" class="form-label">Enquiry details</label>
+                                <textarea class="form-control" id="update_Enquiry_details"
+                                    name="update_sEnquiry_details" rows="3" required></textarea>
+                            </div>
+
+                            <div class="col-12 text-end">
+                                <button type="submit" class="btn btn-primary w-100 w-md-auto">Update</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- Delete modal -->
+
+<div class="modal fade" id="Delete_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="">
+                    <input type="hidden" name="IDs" id="IDs" hidden>
+                    <input type="text" value="{{ csrf_token }}" name="delete_CSRF" id="delete_CSRF" hidden>
+
+                    <div class="text-center mt-3">
+                        <i class="fa-solid fa-triangle-exclamation fs-1 text-danger"></i>
+                    </div>
+                    <div class="text-center mt-2">
+                        <p class="fw-medium">Do want to detete the Customer ?<br>once deteted not able to recover</p>
+                    </div>
+                    <div class="text-center mt-4 rounded-xl">
+                        <button type="button" class="btn btn-danger" onclick="Delete()">Confirm</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Delete modal end -->
+
+
+
+
+<!-- Add Purchase  -->
+<div class="modal fade" id="Add_purchase" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Add Enquiery</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="#">
+                    <div class="row">
+                        <div class="col-md-6 pt-2">
+
+                            <label for="Asssign" class="form-label">Asssign To</label>
+                            <select name="Asssign" id="Asssign" class="form-control col-md-6">
+                                {% for i in details %}
+                                <option value="{{i.id}}">{{i.username}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 pt-2">
+                            <label for="Requried_d" class="form-label">Required Date</label>
+                            <input type="date" class="form-control" id="Add_Required_at" name="Add_Required_at">
+                        </div>
+                        <div class="col-md-6 pt-3">
+                            <label for="Reminder_d" class="form-label">Reminder Date</label>
+                            <input type="date" class="form-control" id="Add_Reminder_at" name="Add_Reminder_at">
+                        </div>
+                        <input type="text" value="{{ csrf_token }}" name="Add_CSRF" id="Add_CSRF" hidden>
+                        <div class="col-md-6 pt-2">
+                            <label for="C_status" class="form-label">Status</label>
+                            <select class="form-select" id="Add_status" name="Add__status">
+                                <option value="#" disabled>Select</option>
+                                <option value="Pending" selected>Pending</option>
+                                <option value="Completed">Completed</option>
+
+                            </select>
+                        </div>
+                        <div class="col-md-12 pt-2">
+                            <label for="Enquiry_details" class="form-label">Enquiry details</label>
+                            <textarea class="form-control" id="Add_Enquiry_details" name="Add_Enquiry_details" rows="3"
+                                required></textarea>
+                        </div>
+                    </div>
+                    <div id="overlay">
+                        <div class="loader-container">
+                            <div class="spinner-border text-light" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="reset" class="btn btn-danger">Reset</button>
+                        <button type="button" class="btn " onclick="Add_purchase()"
+                            style="background-color:  #021182;color:white">Add Enquiery</button>
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Edit Purchase -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+<script>
+    $(document).ready(function () {
+        $(".alert").each(function () {
+            var $alert = $(this);
+            $alert.addClass("show");
+
+            setTimeout(function () {
+                $alert.addClass("hide");
+            }, 3000);
+        });
+    });
+
+    // Getting the Product and Staff Details for Create customer
+    const Fullup = () => {
+        $.ajax({
+            url: "/Staff_details/",
+            method: "GET",
+            dataType: "json",
+            success: function (response) {
+                console.log(response);
+                $("#Staff_Assign").empty().append('<option value="#" disabled selected>Select Staff</option>');
+                $("#Product").empty().append('<option value="#" disabled selected>Select Product</option>');
+
+                $.each(response.Staff_details, function (index, staff) {
+                    $("#Staff_Assign").append(`<option value="${staff.id}">${staff.username}</option>`);
+                });
+                $.each(response.Product_details, function (index, product) {
+                    $("#Product").append(`<option value="${product.product_id}">${product.name}</option>`);
+
+                });
+
+                $("#Product").on("change", function () {
+                    let selectedProductId = $(this).val();
+                    let selectedProduct = response.Product_details.find(product => product.product_id == selectedProductId);
+                    if (selectedProduct) {
+                        $("#Product_Price").val(selectedProduct.price);
+                    }
+                });
+
+            },
+                error: function (xhr, status, error) {
+                    console.error("Error:", error);
+                }
+        });
+    }
+
+    $(document).ready(function () {
+        gEt_customerDetails()
+        Fullup()
+
+
+    })
+    function formatDateTime(dateString) {
+        let date = new Date(dateString);
+        return date.toLocaleString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+        });
+    }
+
+    // Data for Customer  table 
+    const gEt_customerDetails = () => {
+        $("#Table_data").html(`
+            <tr id="loader">
+                <td colspan="6" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </td>
+            </tr>
+        `);
+
+        $.ajax({
+            url: "/customers_details/",
+            method: "GET",
+            dataType: "json",
+            success: function (response) {
+                console.log("User Role:", response.role); // Debugging role value
+
+                $("#Table_data").empty();
+
+                if (response.customers.length === 0) {
+                    $("#Table_data").append(`
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No data available</td>
+                        </tr>
+                    `);
+                } else {
+                    $.each(response.customers, function (index, item) {
+                        let actions = `
+                            <div class="dropdown">
+                                <a href="#" class="text-dark" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-ellipsis"></i>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item edit-btn" href="#" data-bs-toggle="modal"
+                                            data-bs-target="#Edit_Customers" onclick="fetchCustomerDetails(${item.id})" 
+                                            id="edit-${item.id}">Edit</a>
+                                    </li>
+                        `;
+
+                        // Add delete option only for `superadmin`
+                        if (response.role === "superadmin") {
+                            actions += `
+                                <li>
+                                    <a class="dropdown-item     " onclick="Delete_Customer(${item.id})" 
+                                        href="#" id="${item.id}">Delete</a>
+                                </li>
+                            `;
+                        }
+
+                        actions += `</ul></div>`;
+
+                        // Append row
+                        $("#Table_data").append(`
+                            <tr>
+                                <td data-label="Customer ID" class="pt-4 pb-4"  style="color: #021182;font-weight:550;">${item.Customer_ID}</td>
+                                <td data-label="Created Date" class="pt-4 pb-4">${formatDateTime(item.created_at)}</td>
+                                <td data-label="Name" class="pt-4 pb-4">${item.name}</td>
+                                <td data-label="Phone Number" class="pt-4 pb-4">${item.phone_number}</td>
+                                <td data-label="Email Id" class="pt-4 pb-4">${item.Email_id}</td>
+                                <td data-label="Email Id" class="pt-4 pb-4"><span><span class="badge text-bg-success">${item.Staff_Assign__username}</span></span></td>
+                                <td data-label="Required Date" class="pt-4 pb-4">${item.Requried_date}</td>
+                                <td data-label="Actions" class="pt-4 pb-4">${actions}</td>
+                            </tr>
+                        `);
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error fetching customer details:", error);
+            }
+        });
+    };
+
+
+    const reset = () => {
+        gEt_customerDetails()
+        $("#C_number").val("")
+    }
+
+    // filter customer by number:
+    const gEt_customer_by_number = () => {
+        let number = $("#C_number").val();
+        $("#overlay").fadeIn();
+        $("#downloadBrochureBtn").prop("disabled", true);
+       
+
+        $.ajax({
+            url: "/Filter_C_details/" + number + "/",
+            method: "GET",
+            dataType: "json",
+            success: function (response) {
+                console.log("User Role:", response.role); // Debugging role value
+                $("#Table_data").empty();
+
+                if (response.customers.length === 0) {
+                    $("#Table_data").append(`
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No data available</td>
+                        </tr>
+                    `);
+                } else {
+                    $.each(response.customers, function (index, item) {
+                        let actions = `
+                            <div class="dropdown">
+                                <a href="#" class="text-dark" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-ellipsis"></i>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item " data-bs-toggle="modal" 
+                                           data-bs-target="#Add_purchase" href="#" id="${item.id}">Add Enquiry</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                           data-bs-target="#Edit_Customers" onclick="fetchCustomerDetails(${item.id})" 
+                                           id="edit-${item.id}">Edit</a>
+                                    </li>
+                        `;
+
+                        // Add delete option only for `superadmin`
+                        if (response.role === "superadmin") {
+                            actions += `
+                                <li>
+                                    <a class="dropdown-item delete-btn bg-danger" onclick="Delete_Customer(${item.id})" 
+                                       href="#" id="${item.id}">Delete</a>
+                                </li>
+                            `;
+                        }
+
+                        actions += `</ul></div>`;
+
+                        // Append row
+                        $("#Table_data").append(`
+                            <tr>
+                                <td data-label="Customer ID" class="pt-4 pb-4" style="color: #021182;font-weight:550;">${item.Customer_ID}</td>
+                                <td data-label="Created Date" class="pt-4 pb-4">${formatDateTime(item.created_at)}</td>
+                                <td data-label="Name" class="pt-4 pb-4">${item.name}</td>
+                                <td data-label="Phone Number" class="pt-4 pb-4">${item.phone_number}</td>
+                                <td data-label="Email Id" class="pt-4 pb-4">${item.Email_id}</td>
+                                <td data-label="Email Id" class="pt-4 pb-4">
+                                    <span><span class="badge text-bg-success">${item.Staff_Assign__username}</span></span>
+                                </td>
+                                <td data-label="Required Date" class="pt-4 pb-4">${item.Requried_date}</td>
+                                <td data-label="Actions" class="pt-4 pb-4">${actions}</td>
+                            </tr>
+                        `);
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error fetching customer details:", error);
+            },
+            complete: function () {
+                // Hide overlay & enable button after request completes
+                $("#overlay").fadeOut();
+                $("#downloadBrochureBtn").prop("disabled", false);
+            }
+        });
+    };
+
+
+
+
+
+
+
+    const Add_purchase = () => {
+        let number = $("#C_number").val();
+        let csrfToken = $("#CSRF").val();
+
+        let formData1 = {
+            assign_to: $("#Asssign").val(),
+            required_date: $("#Add_Required_at").val(),
+            reminder_date: $("#Add_Reminder_at").val(),
+            status: $("#Add_status").val(),
+            enquiry_details: $("#Add_Enquiry_details").val(),
+        };
+        console.log(formData1)
+
+        $.ajax({
+            url: "/Ex_Cus_purchase/" + number + "/",
+            method: "POST",
+            data: JSON.stringify(formData1),
+            contentType: "application/json",
+            headers: {
+                "X-CSRFToken": csrfToken
+            },
+            success: function (data) {
+                console.log("Success:", data);
+                location.reload()
+
+            },
+            error: function (xhr, status, error) {
+                console.error("Error:", error);
+            }
+        });
+    };
+
+
+
+
+
+    function fetchCustomerDetails(customerId) {
+        //$(".spinner-border").removeAttr("hidden");
+        //$(".col-lg-6").addClass("col-md-disable");
+
+        // Fetch Staff Details
+        $.ajax({
+            url: "/Staff_details/",
+            method: "GET",
+            dataType: "json",
+            success: function (response) {
+                console.log(response);
+
+                // Clear and append default option
+                $("#update_Staff_Assign").empty().append('<option value="#" disabled selected>Select Staff</option>');
+
+                // Append staff options
+                $.each(response.Staff_details, function (index, staff) {
+                    $("#update_Staff_Assign").append(`<option value="${staff.id}">${staff.username}</option>`);
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error("Error:", error);
+            }
+        });
+
+        // Fetch Customer Details
+        $.ajax({
+            url: "/Get_customer/" + customerId,
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                if (response.Customer_details.length > 0) {
+                    let data = response.Customer_details[0];
+
+                    // Populate form fields
+                    $("#customer_id").val(customerId);
+                    $("#update_name").val(data.name);
+                    $("#update_Email_id").val(data.Email_id);
+                    $("#update_phone_number").val(data.phone_number);
+                    $("#update_Requried_d").val(data.Requried_date);
+                    $("#update_Reminder_d").val(data.Reminder_date);
+                    $("#update_Product_Price").val(data.Product_Price);
+                    $("#update_address").val(data.address);
+                    $("#update_Enquiry_details").val(data.Enquiry_details);
+                    $("#update_Payment").val(data.Payment);
+
+                    // Update Staff selection
+                    setTimeout(() => {
+                        $("#update_Staff_Assign").val(data.Staff_Assign_id).change();
+                        $("#update_C_status").val(data.status).change();
+
+                    }, 100);
+
+                    // Show modal
+                    $("#Edit_Customer").modal("show");
+                } else {
+                    alert("Customer details not found!");
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error fetching data: ", error);
+                alert("Failed to fetch customer details!");
+            },
+            complete: function () {
+                $(".spinner-border").attr("hidden", true);
+                $(".col-lg-6").removeClass("col-md-disable");
+            }
+        });
+
+
+    }
+    $("#updateCustomerForm").submit(function (event) {
+        event.preventDefault();
+
+        const formData = {
+            name: $("#update_name").val(),
+            Email_id: $("#update_Email_id").val(),
+            phone_number: $("#update_phone_number").val(),
+            Requried_date: $("#update_Requried_d").val(),
+            Reminder_date: $("#update_Reminder_d").val(),
+            Product_Price: $("#update_Product_Price").val(),
+            address: $("#update_address").val(),
+            Enquiry_details: $("#update_Enquiry_details").val(),
+            product_id: $("#update_Product").val(),
+            Staff_Assign_id: $("#update_Staff_Assign").val(),
+            Payment: $("#update_Payment").val(),
+            status: $("#update_C_status").val(),
+        };
+
+        let csrfToken = $("#CSRF").val();
+        let customerId = $("#customer_id").val();
+        console.log("Sending Data:", formData);
+
+        $.ajax({
+            url: "/Get_customer/" + customerId,
+            type: "POST",
+            data: JSON.stringify(formData),
+            contentType: "application/json",
+            headers: {
+                "X-CSRFToken": csrfToken
+            },
+            success: function (response) {
+                $("#Edit_Customer").modal("hide");
+                window.location.reload()
+            },
+            error: function (xhr, status, error) {
+                console.log("Error:", xhr.responseText);
+                alert("Update failed!");
+            }
+        });
+    });
+    function Delete_Customer(id) {
+        $('#Delete_modal').modal('show')
+        console.log(id)
+        $("#IDs").val(id)
+
+
+    }
+
+    const Delete = () => {
+        let id = $("#IDs").val()
+        let csrfToken = $("#delete_CSRF").val();
+        $.ajax({
+            url: "/dEl_customer/" + id,
+            type: "DELETE",
+            headers: {
+                "X-CSRFToken": csrfToken
+            },
+            success: function () {
+                location.reload()
+            },
+            error: function (xhr, status, error) {
+                console.log("Error:", xhr.responseText);
+                alert("Detele failed!");
+            }
+        })
+    }
+
+
+
+
+</script>
+<!-- Create Customer modal -->
+{% endblock %}
